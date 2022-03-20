@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ioexpander.h"
 #include "epd_driver.h"
 #include "epd_highlevel.h"
 

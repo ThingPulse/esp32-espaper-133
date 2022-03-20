@@ -1,8 +1,9 @@
-
+#include <Arduino.h>
 #include "settings.h"
+#include "ioexpander.h"
 #include "display.h"
 #include "ethernet.h"
-#include "ioexpander.h"
+
 
 void setup()
 {
@@ -10,13 +11,14 @@ void setup()
     Serial.begin(115200);
     while (!Serial);
 
-    //initDisplay();
+    initDisplay();
     initIoExpander();
     initEthernet();
-    getImage();
 
+    getImage();
 }
 
 void loop() {
+    //processData();
  
 }

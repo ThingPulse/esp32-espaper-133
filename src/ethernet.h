@@ -1,11 +1,12 @@
 #pragma once
 
+#include "ioexpander.h"
 #include "defines.h"
 
 // You must have SSL Certificates here
 #include "trust_anchors.h"
 #include "settings.h"
-#include "ioexpander.h"
+
 
 
 EthernetClient    client;
@@ -16,9 +17,9 @@ EthernetSSLClient sslClient(client, TAs, (size_t)TAs_NUM);
 // Raw IP address not accepted in SSL
 //IPAddress server_host(104, 22, 48, 75);
 
-// https://loremflickr.com/cache/resized/385_17889439303_57be1c692a_k_960_1280_nofilter.jpg
-
-const char      server_host[]   = "loremflickr.com"; // leave this alone, change only above two
+// https://www.scantick.com/wp-content/uploads/2021/09/immotick-e-ink-display-2-0.jpg
+const char      server_host[]   = "www.scantick.com"; // leave this alone, change only above two
+const char      documentPath[] = "/wp-content/uploads/2021/09/immotick-e-ink-display-2-0.jpg";
 const uint16_t  server_port     = 443;
 
 // Variables to measure the speed
@@ -28,7 +29,7 @@ unsigned long byteCount = 0;
 bool printWebData = false;  // set to false for better speed measurement
 
 void setCSPin(uint8_t state) {
-  ioport.digitalWrite(PHY_CS, state);
+  pca9555_setCSBit(state);
 }
 
 void initEthernet() {
@@ -53,8 +54,6 @@ void initEthernet() {
     //Ethernet.begin(mac[index], ip);
     Ethernet.begin(mac[index]);
 
-
-
     Serial.print(F("Connected! IP address: "));
     Serial.println(Ethernet.localIP());
 
@@ -72,7 +71,7 @@ void initEthernet() {
 void getImage() {
     // if you get a connection, report back via serial:
     auto start = millis();
-        // specify the server and port, 443 is the standard port for HTTPS
+    // specify the server and port, 443 is the standard port for HTTPS
     if (sslClient.connect(server_host, server_port)) {
         auto time = millis() - start;
         Serial.print("Connected to ");
@@ -82,51 +81,67 @@ void getImage() {
         Serial.println(time);
 
         // Make a HTTP request:
-        sslClient.println("GET /cache/resized/65535_51753983634_758f6dbf65_k_1280_960_nofilter.jpg HTTP/1.1");
+        sslClient.print("GET ");
+        sslClient.print(documentPath);
+        sslClient.println(" HTTP/1.1");
         sslClient.println("User-Agent: SSLClientOverEthernet");
         sslClient.print("Host: ");
         sslClient.println(server_host);
         sslClient.println("Connection: close");
         sslClient.println();
-    }
-    else
-    {
+        Serial.println("Request sent");
+    } else {
         // if you didn't get a connection to the server:
-        Serial.println("Connection failed");
+        Serial.printf("Connection failed: %d\n", sslClient.getWriteError());
+
+        return;
     }
 
     beginMicros = micros();
-}
-
-void processData() {
+    Serial.println("Processing Data");
      // if there are incoming bytes available
-  // from the server, read them and print them:
-  int len = sslClient.available();
+    // from the server, read them and print them:
+    int len = 0;
+    boolean isHeader = true;
+    uint32_t lastUpdate = millis();
+    while(sslClient.connected()) {
+        len = sslClient.available();
 
-  if (len > 0)
-  {
-    byte buffer[80];
 
-    if (len > 80)
-      len = 80;
+        if (len > 0)
+        {
+            if (isHeader) {
+                String headerLine = sslClient.readStringUntil('\n');
+                Serial.println(headerLine);
+                if (headerLine == "\r") {
+                    Serial.println("Body:");
+                    isHeader = false;
+                }
+            } else {
+                int bufferSize = 1024;
+                byte buffer[bufferSize];
 
-    sslClient.read(buffer, len);
+                if (len > bufferSize) len = bufferSize;
 
-    if (printWebData)
-    {
-      Serial.write(buffer, len); // show in the serial monitor (slows some boards)
+                sslClient.read(buffer, len);
+
+                if (printWebData) {
+                    Serial.write(buffer, len); // show in the serial monitor (slows some boards)
+                }
+                if (millis() - lastUpdate > 1000) {
+                    Serial.printf("Received %d bytes\n", byteCount);
+                    lastUpdate = millis();
+                }
+
+                byteCount = byteCount + len;
+            }
+        }
     }
-
-    byteCount = byteCount + len;
-  }
-
-  // if the server's disconnected, stop the sslClient:
-  if (!sslClient.connected())
-  {
+    Serial.printf("Total byte count: %d\n", byteCount);
     endMicros = micros();
 
     Serial.println();
-    Serial.println("Disconnecting.");
+    Serial.printf("Disconnecting. Status code: %d\n", sslClient.getWriteError());
     sslClient.stop();
 
     Serial.print("Received ");
@@ -140,10 +155,10 @@ void processData() {
     Serial.print(" kbytes/second");
     Serial.println();
 
-    // do nothing forevermore:
-    while (true)
-    {
-      delay(1);
-    }
-  }
+
+  
+}
+
+void processData() {
+
 }

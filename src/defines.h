@@ -15,6 +15,8 @@
 // Debug Level from 0 to 4
 #define _ETHERNET_WEBSERVER_LOGLEVEL_       3
 
+#define MAX_SOCK_NUM 1
+#define SENDCONTENT_P_BUFFER_SZ 4096
 
 #define ETHERNET_USE_ESP32
 #define BOARD_TYPE      "ESP32"
@@ -32,13 +34,17 @@
 // Use true  for ENC28J60 and UIPEthernet library (https://github.com/UIPEthernet/UIPEthernet)
 // Use false for W5x00 and Ethernetx library      (https://www.arduino.cc/en/Reference/Ethernet)
 
-#define USE_UIP_ETHERNET   true
+//#define USE_UIP_ETHERNET   false
+#define USE_ETHERNET_ENC   true
 //#define USE_UIP_ETHERNET   false
 
 // Note: To rename ESP628266 Ethernet lib files to Ethernet_ESP8266.h and Ethernet_ESP8266.cpp
 // In order to USE_ETHERNET_ESP8266
 
-#include "UIPEthernet.h"
+//#include "UIPEthernet.h"
+//#include "EthernetClient.h"
+//#include "EthernetServer.h"
+#include "EthernetENC.h"
 #define SHIELD_TYPE           "ENC28J60 using UIPEthernet Library"
 
 
