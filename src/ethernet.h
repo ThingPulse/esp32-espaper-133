@@ -27,9 +27,12 @@ unsigned long beginMicros, endMicros;
 unsigned long byteCount = 0;
 
 bool printWebData = false;  // set to false for better speed measurement
+uint32_t summedSwitchingTime = 0;
 
 void setCSPin(uint8_t state) {
+  uint32_t start = micros();
   pca9555_setCSBit(state);
+  summedSwitchingTime += micros() - start;
 }
 
 void initEthernet() {
@@ -56,7 +59,7 @@ void initEthernet() {
 
     Serial.print(F("Connected! IP address: "));
     Serial.println(Ethernet.localIP());
-
+    Serial.printf("Consumed %d us to switch", summedSwitchingTime);
     // give the Ethernet shield a second to initialize:
     delay(2000);
 
@@ -68,7 +71,9 @@ void initEthernet() {
 
 }
 
-void getImage() {
+ImageBuffer getImage() {
+    ImageBuffer imageBuffer;
+    imageBuffer.size = 0;
     // if you get a connection, report back via serial:
     auto start = millis();
     // specify the server and port, 443 is the standard port for HTTPS
@@ -94,7 +99,7 @@ void getImage() {
         // if you didn't get a connection to the server:
         Serial.printf("Connection failed: %d\n", sslClient.getWriteError());
 
-        return;
+        return imageBuffer;
     }
 
     beginMicros = micros();
@@ -104,6 +109,9 @@ void getImage() {
     int len = 0;
     boolean isHeader = true;
     uint32_t lastUpdate = millis();
+    uint32_t contentLength = 0;
+    uint8_t *currentBuffer;
+
     while(sslClient.connected()) {
         len = sslClient.available();
 
@@ -116,17 +124,31 @@ void getImage() {
                 if (headerLine == "\r") {
                     Serial.println("Body:");
                     isHeader = false;
+
+                }
+                if (headerLine.startsWith("Content-Length:")) {
+                    String contentLengthText = headerLine.substring(16);
+                    Serial.printf("contentLength: %s\n", contentLengthText.c_str());
+                    contentLength = contentLengthText.toInt();
+                    Serial.printf("as number: %d\n", contentLength);
+                    if (ESP.getFreePsram() < contentLength) {
+                        Serial.printf("Not enough PSRAM to store image in memory!");
+                        return imageBuffer;
+                    }
+                    imageBuffer.image = (uint8_t*)ps_malloc(contentLength);
+                    imageBuffer.size = contentLength;
+                    currentBuffer = imageBuffer.image;
                 }
             } else {
                 int bufferSize = 1024;
-                byte buffer[bufferSize];
+
 
                 if (len > bufferSize) len = bufferSize;
 
-                sslClient.read(buffer, len);
+                sslClient.read(currentBuffer, len);
 
                 if (printWebData) {
-                    Serial.write(buffer, len); // show in the serial monitor (slows some boards)
+                    Serial.write(currentBuffer, len); // show in the serial monitor (slows some boards)
                 }
                 if (millis() - lastUpdate > 1000) {
                     Serial.printf("Received %d bytes\n", byteCount);
@@ -134,6 +156,7 @@ void getImage() {
                 }
 
                 byteCount = byteCount + len;
+                currentBuffer = imageBuffer.image + byteCount;
             }
         }
     }
@@ -154,8 +177,9 @@ void getImage() {
     Serial.print(rate);
     Serial.print(" kbytes/second");
     Serial.println();
+    Serial.printf("Consumed %d ms to switch", summedSwitchingTime / 1000);
 
-
+    return imageBuffer;
   
 }
 

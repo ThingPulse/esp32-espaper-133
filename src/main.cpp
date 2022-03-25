@@ -15,7 +15,8 @@ void setup()
     initIoExpander();
     initEthernet();
 
-    getImage();
+    ImageBuffer buffer = getImage();
+    drawJPEGFromMemory(buffer, 0, 0);
 }
 
 void loop() {

@@ -8,3 +8,8 @@
 #define EPDIY_I2C_PORT I2C_NUM_0
 
 #define IOEXPANDER_ADDRESS 0x20
+
+typedef struct {
+    uint8_t* image;
+    uint32_t size;
+} ImageBuffer;
