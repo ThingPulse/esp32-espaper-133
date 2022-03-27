@@ -27,12 +27,9 @@ unsigned long beginMicros, endMicros;
 unsigned long byteCount = 0;
 
 bool printWebData = false;  // set to false for better speed measurement
-uint32_t summedSwitchingTime = 0;
 
 void setCSPin(uint8_t state) {
-  uint32_t start = micros();
   pca9555_setCSBit(state);
-  summedSwitchingTime += micros() - start;
 }
 
 void initEthernet() {
@@ -59,7 +56,7 @@ void initEthernet() {
 
     Serial.print(F("Connected! IP address: "));
     Serial.println(Ethernet.localIP());
-    Serial.printf("Consumed %d us to switch", summedSwitchingTime);
+    
     // give the Ethernet shield a second to initialize:
     delay(2000);
 
@@ -177,7 +174,6 @@ ImageBuffer getImage() {
     Serial.print(rate);
     Serial.print(" kbytes/second");
     Serial.println();
-    Serial.printf("Consumed %d ms to switch", summedSwitchingTime / 1000);
 
     return imageBuffer;
   

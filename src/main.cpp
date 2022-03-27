@@ -3,7 +3,7 @@
 #include "ioexpander.h"
 #include "display.h"
 #include "ethernet.h"
-
+#include "mqtt.h"
 
 void setup()
 {
@@ -14,12 +14,14 @@ void setup()
     initDisplay();
     initIoExpander();
     initEthernet();
+    initMqtt();
 
+ 
     ImageBuffer buffer = getImage();
     drawJPEGFromMemory(buffer, 0, 0);
+    
 }
 
 void loop() {
-    //processData();
- 
+    processMqtt();
 }
