@@ -24,4 +24,9 @@ void setup()
 
 void loop() {
     processMqtt();
+    
+    // Renew DHCP-lease if required.
+    // https://www.arduino.cc/reference/en/libraries/ethernet/ethernet.maintain/
+    // https://github.com/JAndrassy/EthernetENC/blob/master/src/Ethernet.h#L91
+    Ethernet.maintain();
 }
