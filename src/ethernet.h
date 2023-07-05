@@ -68,6 +68,13 @@ void initEthernet() {
 
 }
 
+void deinitEthernet() {
+      Enc28J60Network::powerOff();
+      delay(100);
+      pinMode(PHY_INT, INPUT); 
+
+}
+
 ImageBuffer getImage() {
     ImageBuffer imageBuffer;
     imageBuffer.size = 0;

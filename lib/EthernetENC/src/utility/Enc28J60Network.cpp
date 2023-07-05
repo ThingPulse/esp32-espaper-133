@@ -610,13 +610,15 @@ Enc28J60Network::chksum(uint16_t sum, memhandle handle, memaddress pos, uint16_t
 void
 Enc28J60Network::powerOff()
 {
+  Serial.println("Turning off Ethernet Chip");
   SPI.beginTransaction(SPI_ETHERNET_SETTINGS);
   writeOp(ENC28J60_BIT_FIELD_CLR, ECON1, ECON1_RXEN);
-  delay(50);
+  while(readReg(ESTAT) & ESTAT_RXBUSY);
+  while(readReg(ECON1) & ECON1_TXRTS);
   writeOp(ENC28J60_BIT_FIELD_SET, ECON2, ECON2_VRPS);
-  delay(50);
   writeOp(ENC28J60_BIT_FIELD_SET, ECON2, ECON2_PWRSV);
   SPI.endTransaction();
+  Serial.println("Ethernet Chip off");
 }
 
 void

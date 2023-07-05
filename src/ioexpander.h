@@ -45,3 +45,11 @@ void initIoExpander() {
     pca9555_set_value(EPDIY_I2C_PORT, value, highPort);
 
 }
+
+void deinitIoExpander() {
+    uint8_t value = 0x00;
+    ESP_ERROR_CHECK(pca9555_set_value(EPDIY_I2C_PORT, value, 0));
+    ESP_ERROR_CHECK(pca9555_set_value(EPDIY_I2C_PORT, value, 1));
+    ESP_ERROR_CHECK(pca9555_set_config(EPDIY_I2C_PORT, value, 0));
+    ESP_ERROR_CHECK(pca9555_set_config(EPDIY_I2C_PORT, value, 1));
+}
